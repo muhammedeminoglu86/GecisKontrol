@@ -19,15 +19,23 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using GecisKontrol.Domain.Model.JWT;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.OpenApi.Models;
 using StackExchange.Redis;
+using Microsoft.AspNetCore.Hosting;
 
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
-
+builder.Services.AddRazorPages()
+    .AddRazorPagesOptions(options =>
+    {
+        // Yetkisiz kullanýcýlarý /Account/Login sayfasýna yönlendir
+        options.Conventions.AuthorizeFolder("/Account")
+            .AllowAnonymousToPage("/Account/Login");
+    });
 builder.Services.AddTransient<GecisKontrol.DAL.Data.DbContext>(provider =>
 {
 	var configuration = provider.GetRequiredService<IConfiguration>();
@@ -57,8 +65,11 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IDeviceGateMappingRepository, DeviceGateMappingRepository>(); 
 builder.Services.AddScoped<IErrorLogRepository, ErrorLogRepository>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
-builder.Services.AddScoped<IErrorLogService, ErrorLogService>();
-
+builder.Services.AddTransient<IErrorLogService, ErrorLogService>();
+builder.Services.AddAutoMapper(typeof(MappingProfile));
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<UserService>();
+builder.Services.AddScoped<ErrorLogService>();
 
 builder.Services.AddIdentity<ApplicationUser, ApplicationRole>()
 	.AddEntityFrameworkStores<ApplicationDbContext>()
@@ -72,21 +83,26 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 	options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-}).AddJwtBearer(options =>
-{
-    options.TokenValidationParameters = new TokenValidationParameters
     {
-        ValidateIssuerSigningKey = true,
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:Key"])),
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
-        ValidAudience = builder.Configuration["JwtSettings:Audience"]
-    };
-});
+        options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+    })
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/Account/Login";
+    })
+    .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters {
+             ValidateIssuerSigningKey = true,
+             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:Key"])),
+             ValidateIssuer = true,
+             ValidateAudience = true,
+             ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
+             ValidAudience = builder.Configuration["JwtSettings:Audience"]
+         };
+    });
+
+
 
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JwtSettings"));
 
@@ -147,6 +163,8 @@ app.UseStaticFiles();
 app.UseRouting();
 
 app.UseAuthentication();
+app.UseStatusCodePagesWithReExecute("/Account/Login", "?statusCode={0}");
+
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 app.UseAuthorization();
@@ -154,5 +172,11 @@ app.UseAuthorization();
 app.MapControllerRoute(
 	name: "default",
 	pattern: "{controller=Home}/{action=Index}/{id?}");
+app.UseEndpoints(endpoints =>
+{
+    endpoints.MapControllerRoute(
+        name: "default",
+        pattern: "{controller=Home}/{action=Index}/{id?}");
+});
 
 app.Run();

@@ -35,7 +35,7 @@ namespace GecisKontrol.WebAPI.Controllers
             }
             else
             {
-                var user = await _userService.GetUserByIdAsync(id);
+                var user = await _userService.GetUserByIdAsync("select * from \"User\" where id = @id", new {id = id});
                 if (user == null)
                 {
                     return NotFound(ApiResponse<string>.ErrorResponse("Kullanıcı Bulunamadı"));
@@ -47,9 +47,9 @@ namespace GecisKontrol.WebAPI.Controllers
         }
 
         [HttpGet("GetAll")]
-        public async Task<IActionResult> GetAllUsers()
+        public async Task<IActionResult> GetAllUsers(int page, int pageSize)
         {
-            var cacheKey = "all_users";
+            var cacheKey = $"users_page_{page}_size_{pageSize}";
             var db = _redis.GetDatabase();
             var cachedUsers = await db.StringGetAsync(cacheKey);
 
@@ -60,11 +60,13 @@ namespace GecisKontrol.WebAPI.Controllers
             }
             else
             {
-                var users = await _userService.GetAllUsersAsync();
+                int offset = (page - 1) * pageSize;
+                var users = await _userService.GetAllUsersAsync("select * from \"User\" LIMIT @PageSize OFFSET @Offset", new { PageSize = pageSize, Offset = offset });
                 await db.StringSetAsync(cacheKey, JsonConvert.SerializeObject(users));
                 return Ok(ApiResponse<IEnumerable<User>>.SuccessResponse(users));
             }
         }
+
 
         [HttpPost("Insert")]
         public async Task<IActionResult> InsertUser([FromBody] UserInsertDTO userDTO)
@@ -85,7 +87,7 @@ namespace GecisKontrol.WebAPI.Controllers
         [HttpPut("Update/{id}")]
         public async Task<IActionResult> UpdateUser(int id, [FromBody] UserUpdateDTO userDTO)
         {
-            var user = await _userService.GetUserByIdAsync(id);
+            var user = await _userService.GetUserByIdAsync("select * from \"User\" where id = @id", new {id = id});
             if (user == null)
             {
                 return NotFound(ApiResponse<string>.ErrorResponse("User not found"));

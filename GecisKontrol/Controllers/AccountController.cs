@@ -4,6 +4,8 @@ using System.Text;
 using GecisKontrol.Domain.Model.IdentityModel;
 using GecisKontrol.Domain.Model.JWT;
 using GecisKontrol.Models.LoginModels;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
@@ -40,7 +42,17 @@ namespace GecisKontrol.Controllers
 				var result = await _signInManager.PasswordSignInAsync(model.Username, model.Password, model.RememberMe, lockoutOnFailure: false);
 				if (result.Succeeded)
 				{
-					return LocalRedirect(returnUrl); // Başarılı giriş sonrası returnUrl'e yönlendir.
+                    var claims = new List<Claim>
+                    {
+                        new Claim(ClaimTypes.Name, model.Username),
+                        // Diğer claimler...
+                    };
+
+                    var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+
+                    await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity));
+
+                    return LocalRedirect(returnUrl); // Başarılı giriş sonrası returnUrl'e yönlendir.
 				}
 				else
 				{

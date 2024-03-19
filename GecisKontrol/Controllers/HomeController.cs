@@ -2,6 +2,8 @@ using GecisKontrol.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 using GecisKontrol.Domain.Interfaces;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 namespace GecisKontrol.Controllers
 {
@@ -16,8 +18,8 @@ namespace GecisKontrol.Controllers
 			_logger = logger;
 			_user = user;
 		}
-
-		public IActionResult Index()
+        [Authorize(AuthenticationSchemes = CookieAuthenticationDefaults.AuthenticationScheme)]
+        public IActionResult Index()
 		{
 			return View();
 		}

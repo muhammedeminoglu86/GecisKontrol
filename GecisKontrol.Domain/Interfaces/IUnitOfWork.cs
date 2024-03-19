@@ -34,6 +34,7 @@ namespace GecisKontrol.Domain.Interfaces
 		public ICompanyRepository _companyRepository { get;  }
 
 		public ICardRepository _cardRepository { get;  }
+        public IEmployeeCardMappingDTORepository _employeeCardMappingDtoRepository { get; }
 
 		// Diğer repository'ler...
 

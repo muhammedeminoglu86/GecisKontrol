@@ -9,8 +9,8 @@ namespace GecisKontrol.Domain.Interfaces
 {
 	public interface IUserRepository
 	{
-		Task<IEnumerable<User>> GetAllUsersAsync();
-		Task<User> GetUserByIdAsync(int id);
+		Task<IEnumerable<User>> GetAllUsersAsync(string query, object param);
+		Task<User> GetUserByIdAsync(string query, object param);
 		Task<int> AddUserAsync(User user);
 		Task UpdateUserAsync(User user);
 		Task DeleteUserAsync(int id);

@@ -22,14 +22,14 @@ public class UserService
 
 	}
 
-	public async Task<IEnumerable<User>> GetAllUsersAsync()
+	public async Task<IEnumerable<User>> GetAllUsersAsync(string query, object param)
 	{
-		return await _unitOfWork._userRepository.GetAllUsersAsync();
+		return await _unitOfWork._userRepository.GetAllUsersAsync(query, param);
 	}
 
-	public async Task<User> GetUserByIdAsync(int id)
+	public async Task<User> GetUserByIdAsync(string query, object param)
 	{
-		return await _unitOfWork._userRepository.GetUserByIdAsync(id);
+		return await _unitOfWork._userRepository.GetUserByIdAsync(query, param);
 	}
 
 	public async Task<int> AddUserAsync(User user)

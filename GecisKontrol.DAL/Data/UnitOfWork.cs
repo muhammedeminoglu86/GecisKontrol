@@ -36,7 +36,9 @@ namespace GecisKontrol.DAL.Data
 
 		public ICompanyRepository _companyRepository { get; private set; }
 
-		public ICardRepository _cardRepository { get; private set; }
+        public IEmployeeCardMappingDTORepository _employeeCardMappingDtoRepository{ get; private set; }
+
+    public ICardRepository _cardRepository { get; private set; }
 		public UnitOfWork(
 			DbContext dbContext,
 			IUserRepository userRepository,
@@ -52,7 +54,8 @@ namespace GecisKontrol.DAL.Data
 			IDepartmentRepository devDepartmentRepository,
 			ICompanyRepository companyRepository,
 			ICardRepository cardRepository,
-			IErrorLogRepository errorLogRepository
+			IErrorLogRepository errorLogRepository,
+			IEmployeeCardMappingDTORepository employeeCardMappingDtoRepository
 		)
 		{
 			_dbContext = dbContext;
@@ -74,8 +77,9 @@ namespace GecisKontrol.DAL.Data
 			_companyRepository = companyRepository;
 			_cardRepository = cardRepository;
 			_errorLogRepository= errorLogRepository;
+            _employeeCardMappingRepository = employeeCardMappingRepository;
 
-		}
+        }
 
 		public async Task CommitAsync()
 		{
